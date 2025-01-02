@@ -2,19 +2,31 @@
 Following node
 """
 
-import numpy as np
+import math
+import sys
 
 import rclpy
+import rclpy.context
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 
-from std_msgs.msg import String, Float32
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-import datetime
 
+class stopDrivingNode(Node):
+    def __init__(self):
+        super().__init__('stop')
+
+        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
+
+        msg = Twist()
+        msg.linear.x = 0.0
+        msg.angular.z = 0.0
+        self.publisher_.publish(msg)
+
+        print("sent stop command")
 
 class followObstacleNode(Node):
-
     def __init__(self):
         #initialize 
         super().__init__('follower')
@@ -24,8 +36,9 @@ class followObstacleNode(Node):
         self.declare_parameter('distance_to_stop', 0.3)
         self.declare_parameter('speed_slow', 0.1)
         self.declare_parameter('speed_fast', 0.15)
-        self.declare_parameter('speed_slow_turn', 0.2)
-        self.declare_parameter('speed_fast_turn', 0.4)
+        self.declare_parameter('speed_slow_turn', 0.4)
+        self.declare_parameter('speed_fast_turn', 0.8)
+        self.declare_parameter('debug', False)
 
         # setup laserscanner subscription
         qos_policy = rclpy.qos.QoSProfile(
@@ -51,23 +64,28 @@ class followObstacleNode(Node):
         speed_fast_param = self.get_parameter('speed_fast').get_parameter_value().double_value
         speed_slow_turn_param = self.get_parameter('speed_slow_turn').get_parameter_value().double_value
         speed_fast_turn_param = self.get_parameter('speed_fast_turn').get_parameter_value().double_value
+        debug = self.get_parameter('debug').get_parameter_value().bool_value
 
-        # finding angle of nearest obstacle
-        nearest_obstacle_distance = msg.min_range
-        nearest_obstacle_angle = np.argmin(np.array(msg.ranges)) * msg.angle_increment
-        nearest_obstacle_angle_deg_int = int(np.rad2deg(nearest_obstacle_angle)[0])
-        angle_normalized = (nearest_obstacle_angle_deg_int - 180) * -1
-        angle_normalized_absolute = np.abs(angle_normalized)
+        # finding measurement of nearest obstacle
+        nearest_value_index = 0
+        nearest_obstacle_distance = 5
+        for i in range(0, len(msg.ranges)):
+            if (0 < msg.ranges[i] < nearest_obstacle_distance):
+                nearest_obstacle_distance = msg.ranges[i]
+                nearest_value_index = i
 
-        if (angle_normalized_absolute in range(90, 180)):
-            speed = 0.0
-            if (angle_normalized > 0):
-                turn = speed_fast_turn_param
-                print("turn right fast")
-            else:
-                turn = speed_fast_turn_param * -1
-                print("turn left fast")
+        # calculate helper values
+        nearest_obstacle_angle = int(math.degrees(nearest_value_index * msg.angle_increment))
+        angle_normalized = nearest_obstacle_angle if nearest_obstacle_angle < 180 else (360 - nearest_obstacle_angle) * -1
 
+        print(f'Nearest obstacle at {angle_normalized} degrees, {nearest_obstacle_distance} m out')
+
+        turn = 0.0
+        speed = 0.0
+
+        if (abs(angle_normalized) in range(45, 180)):
+            turn = math.copysign(speed_fast_turn_param, angle_normalized)
+            print(f'Turning fast with {turn} speed')
         else:
             if (nearest_obstacle_distance > distance_slow_param):
                 speed = speed_fast_param
@@ -76,11 +94,10 @@ class followObstacleNode(Node):
                 speed = speed_slow_param
                 print("drive slow")
             else:
-                speed = 0.0
                 print("stop")
             
-            if(angle_normalized_absolute > 10):
-                turn = speed_slow_turn_param * (angle_normalized / 100)
+            if(angle_normalized != 0):
+                turn = speed_slow_turn_param * (angle_normalized / 20)
 
         # create message
         msg = Twist()
@@ -88,21 +105,24 @@ class followObstacleNode(Node):
         msg.angular.z = turn
 
         # send message
-        self.publisher_.publish(msg)
+        if(not debug):
+            self.publisher_.publish(msg)
 
 def main(args=None):
-    rclpy.init(args=args)
-
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     followNode = followObstacleNode()
 
-    rclpy.spin(followNode)
+    try:
+        rclpy.spin(followNode)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    followNode.destroy_node()
-    rclpy.shutdown()
+    except KeyboardInterrupt:
+        stopNode = stopDrivingNode()
 
+        followNode.destroy_node()
+        stopNode.destroy_node()
+
+        rclpy.shutdown()
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
