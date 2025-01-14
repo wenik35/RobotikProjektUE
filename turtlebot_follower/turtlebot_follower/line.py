@@ -8,26 +8,11 @@ import rclpy.node
 import cv2
 import numpy as np
 
-from std_msgs.msg import String
-from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import CompressedImage
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 from rclpy.signals import SignalHandlerOptions
-
-
-class stopDrivingNode(rclpy.node.Node):
-    def __init__(self):
-        super().__init__('stop')
-
-        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
-
-        msg = Twist()
-        msg.linear.x = 0.0
-        msg.angular.z = 0.0
-        self.publisher_.publish(msg)
-
-        print("sent stop command")
+from turtlebot_follower.stop import keyboardInterruptSpinner
 
 class followLineNode(rclpy.node.Node):
 
@@ -37,7 +22,6 @@ class followLineNode(rclpy.node.Node):
         # definition of the parameters that can be changed at runtime
         self.declare_parameter('boundary_left', 0.6)
         self.declare_parameter('boundary_right', 0.6)
-        self.declare_parameter('threshold_line', 100)
         self.declare_parameter('speed_drive', 0.1)
         self.declare_parameter('speed_turn', 1.5)
 
@@ -132,20 +116,7 @@ class followLineNode(rclpy.node.Node):
 
 
 def main(args=None):
-    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
-    followNode = followLineNode()
-
-    try:
-        rclpy.spin(followNode)
-
-    except KeyboardInterrupt:
-        followNode.destroy_node()
-
-        stopNode = stopDrivingNode()
-        stopNode.destroy_node()
-
-        rclpy.shutdown()
-        sys.exit(0)
+    spinUntilKeyboardInterrupt(args, followLineNode, 1)
 
 
 if __name__ == '__main__':

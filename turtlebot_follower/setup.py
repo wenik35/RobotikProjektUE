@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'obstacle = turtlebot_follower.obstacle:main',
             'line = turtlebot_follower.line:main',
+            'stop = turtlebot_follower.stop:main',
         ],
     },
 )
