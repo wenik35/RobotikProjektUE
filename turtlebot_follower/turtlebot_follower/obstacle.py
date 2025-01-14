@@ -38,6 +38,7 @@ class followObstacleNode(Node):
         self.declare_parameter('speed_fast', 0.15)
         self.declare_parameter('speed_slow_turn', 0.4)
         self.declare_parameter('speed_fast_turn', 0.8)
+        self.declare_parameter('window', 45)
         self.declare_parameter('debug', False)
 
         # setup laserscanner subscription
@@ -64,15 +65,20 @@ class followObstacleNode(Node):
         speed_fast_param = self.get_parameter('speed_fast').get_parameter_value().double_value
         speed_slow_turn_param = self.get_parameter('speed_slow_turn').get_parameter_value().double_value
         speed_fast_turn_param = self.get_parameter('speed_fast_turn').get_parameter_value().double_value
+        window_param = self.get_parameter('window').get_parameter_value().integer_value
         debug = self.get_parameter('debug').get_parameter_value().bool_value
 
         # finding measurement of nearest obstacle
         nearest_value_index = 0
         nearest_obstacle_distance = 5
         for i in range(0, len(msg.ranges)):
+            nearest_obstacle_angle = int(math.degrees(i * msg.angle_increment))
+
             if (0 < msg.ranges[i] < nearest_obstacle_distance):
-                nearest_obstacle_distance = msg.ranges[i]
-                nearest_value_index = i
+                nearest_obstacle_angle = int(math.degrees(i * msg.angle_increment))
+                if (not window_param < nearest_obstacle_angle < 360-window_param):
+                    nearest_obstacle_distance = msg.ranges[i]
+                    nearest_value_index = i
 
         # calculate helper values
         nearest_obstacle_angle = int(math.degrees(nearest_value_index * msg.angle_increment))

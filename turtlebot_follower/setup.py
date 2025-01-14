@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'follow = turtlebot_follower.follower:main',
+            'obstacle = turtlebot_follower.obstacle:main',
+            'line = turtlebot_follower.line:main',
         ],
     },
 )
