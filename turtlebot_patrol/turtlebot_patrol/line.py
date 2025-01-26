@@ -11,13 +11,11 @@ import numpy as np
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
-from rclpy.signals import SignalHandlerOptions
-from turtlebot_follower.stop import spinUntilKeyboardInterrupt
 
 class followLineNode(rclpy.node.Node):
 
     def __init__(self):
-        super().__init__('line_following')
+        super().__init__('patrol')
 
         # definition of the parameters that can be changed at runtime
         self.declare_parameter('boundary_left', 0.6)
@@ -46,7 +44,7 @@ class followLineNode(rclpy.node.Node):
         self.subscription  # prevent unused variable warning
 
         # create publisher for driving commands
-        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 1)
+        self.publisher_ = self.create_publisher(Twist, 'patrol_line', 1)
 
         # create timer to periodically invoke the driving logic
         timer_period = 0.5  # seconds
@@ -116,7 +114,14 @@ class followLineNode(rclpy.node.Node):
 
 
 def main(args=None):
-    spinUntilKeyboardInterrupt(args, followLineNode, 1)
+    rclpy.init(args=args)
+
+    follower = followLineNode()
+    rclpy.spin(follower)
+
+    follower.destroy_node()
+    rclpy.shutdown()
+    sys.exit(0)
 
 
 if __name__ == '__main__':

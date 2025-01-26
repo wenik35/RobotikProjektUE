@@ -1,0 +1,1 @@
+Dieses Package beinhaltet 3 Nodes und eine Launchfile, die den Roboter entlang einer Linie fahren und bei Hindernissen umdrehen lassen.

@@ -10,7 +10,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 
-from turtlebot_follower.stop import keyboardInterruptSpinner
+from turtlebot_follower.stop import spinUntilKeyboardInterrupt
 
 class followObstacleNode(Node):
     def __init__(self):

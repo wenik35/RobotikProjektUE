@@ -1,15 +1,17 @@
 from setuptools import find_packages, setup
+import os
+import glob
 
-package_name = 'turtlebot_follower'
+package_name = 'turtlebot_patrol'
 
 setup(
     name=package_name,
     version='0.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
+        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml', 'launch/patrol_launch.py']),
+    
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,10 +22,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'obstacle = turtlebot_follower.obstacle:main',
-            'line = turtlebot_follower.line:main',
-            'stop = turtlebot_follower.stop:main',
-            'tf = tf_launch'
+            'turn = turtlebot_patrol.obstacle:main',
+            'patrol = turtlebot_patrol.line:main',
+            'master = turtlebot_patrol.master:main'
         ],
     },
 )
