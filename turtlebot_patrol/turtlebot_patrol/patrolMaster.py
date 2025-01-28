@@ -2,20 +2,18 @@
 Following node
 """
 
-import math
 import rclpy
 import rclpy.context
 from rclpy.node import Node
 
-from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 
 from turtlebot_follower.stop import spinUntilKeyboardInterrupt
 
-class masterNode(Node):
+class patrolMasterNode(Node):
     def __init__(self):
         #initialize 
-        super().__init__('master')
+        super().__init__('patrolMasterNode')
 
         # setup laserscanner subscription
         qos_policy = rclpy.qos.QoSProfile(
@@ -25,13 +23,13 @@ class masterNode(Node):
         
         self.follower = self.create_subscription(
             Twist,
-            'patrol',
+            'followLineTop',
             self.follower_callback,
             qos_profile=qos_policy)
         
         self.turner = self.create_subscription(
             Twist,
-            'turner',
+            'turnTop',
             self.turner_callback,
             qos_profile=qos_policy)
         
@@ -43,11 +41,13 @@ class masterNode(Node):
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
 
     def follower_callback(self, msg):
+        print("Follower callback")
         if(not self.isTurning):
             print("Following line")
             self.publisher_.publish(msg)
 
     def turner_callback(self, msg):
+        print("Turner callback")
         if(msg.angular.z == 0):
             self.isTurning = False
             print("Stopping turn")
@@ -57,7 +57,7 @@ class masterNode(Node):
             self.publisher_.publish(msg)
 
 def main(args=None):
-    spinUntilKeyboardInterrupt(args, masterNode)
+    spinUntilKeyboardInterrupt(args, patrolMasterNode)
 
 if __name__ == '__main__':
     main()

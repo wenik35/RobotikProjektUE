@@ -2,21 +2,21 @@
 Following node
 """
 
-import sys
 import rclpy
 import rclpy.context
 from rclpy.node import Node
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
+from turtlebot_follower.stop import spinUntilKeyboardInterrupt
 
 class turnAtObstacleNode(Node):
     def __init__(self):
         #initialize 
-        super().__init__('turner')
+        super().__init__('turnAtObstacle')
 
         # definition of the parameters that can be changed at runtime
-        self.declare_parameter('distance_to_turn', 1.0)
+        self.declare_parameter('distance_to_turn', 0.5)
         self.declare_parameter('turn_speed', 1.0)
         self.active = False
 
@@ -34,36 +34,33 @@ class turnAtObstacleNode(Node):
         self.subscription  # prevent unused variable warning
 
         # publisher for driving commands
-        self.publisher_ = self.create_publisher(Twist, 'patrol_turn', 10)
+        self.publisher_ = self.create_publisher(Twist, 'turnTop', 10)
 
     def scanner_callback(self, msg):
          # caching the parameters for reasons of clarity
         distance_turn_param = self.get_parameter('distance_to_turn').get_parameter_value().double_value
-        speed_param = self.get_parameter('distance_to_turn').get_parameter_value().double_value
+        speed_param = self.get_parameter('turn_speed').get_parameter_value().double_value
+
+        out = Twist()
 
         if (not self.active):
-            if(msg.ranges[0] < distance_turn_param):
+            if(0 < msg.ranges[0] < distance_turn_param):
+                print("Sending signal to start turning")
                 self.active = True
-                self.publisher_
-        else:
-            out = Twist()
-
-            if(msg.ranges[len(msg.ranges)/2] < distance_turn_param):
-                out.angular.z = 0
-            else:
+                out.linear.x = 0.0
                 out.angular.z = speed_param
-        
-            self.publisher_.publish(out)
+                self.publisher_.publish(out)
+
+        else:
+            if(0 < msg.ranges[int(len(msg.ranges)/2)] < distance_turn_param):
+                print("Sending signal to stop turning")
+                self.active = False
+                out.angular.z = 0.0
+                self.publisher_.publish(out)
+
 
 def main(args=None):
-    rclpy.init(args=args)
-
-    follower = turnAtObstacleNode()
-    rclpy.spin(follower)
-
-    follower.destroy_node()
-    rclpy.shutdown()
-    sys.exit(0)
+    spinUntilKeyboardInterrupt(args, turnAtObstacleNode)
 
 if __name__ == '__main__':
     main()

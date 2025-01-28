@@ -5,17 +5,20 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='turtlebot_patrol',
-            executable='turn',
-            name='turn'
+            executable='patrolMaster',
+            name='patrolMaster',
+            output='screen'
         ),
         Node(
             package='turtlebot_patrol',
-            executable='patrol',
-            name='patrol'
+            executable='turnAtObstacle',
+            name='turnAtObstacle',
+            output='screen'
         ),
         Node(
             package='turtlebot_patrol',
-            executable='master',
-            name='master'
+            executable='followLine',
+            name='followLine',
+            output='screen'
         ),
     ])

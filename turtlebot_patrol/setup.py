@@ -22,9 +22,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'turn = turtlebot_patrol.obstacle:main',
-            'patrol = turtlebot_patrol.line:main',
-            'master = turtlebot_patrol.master:main'
+            'turnAtObstacle = turtlebot_patrol.turnAtObstacle:main',
+            'followLine = turtlebot_patrol.followLine:main',
+            'patrolMaster = turtlebot_patrol.patrolMaster:main'
         ],
     },
 )
